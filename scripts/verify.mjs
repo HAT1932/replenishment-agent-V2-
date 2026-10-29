@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 /**
  * scripts/verify.mjs — 端到端验收（对**真实启动的服务**打 HTTP/SSE）
  * ---------------------------------------------------------------------------
@@ -304,6 +304,63 @@ async function main() {
       assert.ok(row.sku_code, '库存行缺少 sku_code');
       assert.ok('on_hand' in row || 'sellable' in row, '库存行缺少数量字段');
       firstSkuCode = firstSkuCode ?? row.sku_code;
+    });
+
+    // ================= 3.5 决策支持（工作台 / SKU 下钻） =================
+    group('3.5 决策支持：工作台与 SKU 下钻');
+
+    let workbenchRow = null;
+    await check('GET /api/workbench 返回风险分级 + 可售天数 + 断货日 + 资金占用', async () => {
+      const { body, status } = await api.json('/api/workbench?page_size=10');
+      assert.equal(status, 200);
+      const data = body.data;
+      assert.ok(Array.isArray(data.rows) && data.rows.length > 0, '工作台没有行');
+      const kpi = data.kpi;
+      assert.ok(kpi && typeof kpi.row_count === 'number', '缺少 KPI');
+      for (const key of ['stockout_count', 'urgent_count', 'suggest_count', 'slow_moving_count', 'sufficient_count']) {
+        assert.ok(typeof kpi[key] === 'number', `KPI 缺少 ${key}`);
+      }
+      assert.ok(typeof kpi.inventory_capital === 'number', 'KPI 缺少库存资金');
+      const row = data.rows[0];
+      assert.ok(row.risk_level, '行缺少 risk_level');
+      assert.ok(['缺货', '紧急', '建议', '滞销', '充足'].includes(row.risk_level), `非法 risk_level：${row.risk_level}`);
+      assert.ok('cover_days' in row, '行缺少 cover_days');
+      assert.ok('stockout_date' in row, '行缺少 stockout_date');
+      assert.ok(typeof row.inventory_capital === 'number', '行缺少 inventory_capital');
+      assert.equal(row.risk_provenance, 'enhancement', '风险分级必须标注为增强实现');
+      assert.ok(data.citation?.disclaimer, '缺少页面级可信声明');
+      workbenchRow = row;
+      return `${data.total} 个 SKU · 缺货 ${kpi.stockout_count} / 紧急 ${kpi.urgent_count} / 资金 ${Math.round(
+        kpi.inventory_capital,
+      )}`;
+    });
+
+    await check('工作台风险筛选与服务端 KPI 一致（risk=紧急）', async () => {
+      const { body } = await api.json(`/api/workbench?risk=${encodeURIComponent('紧急')}&page_size=50`);
+      assert.ok(body.data.rows.every((row) => row.risk_level === '紧急'), '筛选后出现非紧急行');
+      assert.equal(body.data.total, body.data.kpi.urgent_count, '筛选 total 与 KPI 不一致');
+      return `${body.data.total} 个紧急`;
+    });
+
+    await check('工作台非法 risk → 400（details.fields 指明字段）', async () => {
+      const { status, body } = await api.json('/api/workbench?risk=不存在的等级');
+      assert.equal(status, 400);
+      assert.equal(body.error.code, 'VALIDATION_ERROR');
+      assert.equal(body.error.details.fields[0].field, 'risk');
+    });
+
+    await check('GET /api/sku/:code 带 decision（风险视图）+ 四方案对照 + 90 天序列', async () => {
+      assert.ok(workbenchRow?.sku_code, '没有可用 SKU');
+      const { body, status } = await api.json(`/api/sku/${encodeURIComponent(workbenchRow.sku_code)}`);
+      assert.equal(status, 200);
+      const data = body.data;
+      assert.ok(data.decision?.risk?.level, '缺少 decision.risk.level');
+      assert.equal(data.decision.risk.provenance, 'enhancement');
+      assert.ok(Array.isArray(data.suggestions) && data.suggestions.length >= 2, '缺少多方案对照');
+      assert.ok(Array.isArray(data.series) && data.series.length === 90, '缺少 90 天序列');
+      assert.ok(data.explain?.terms, '缺少解释链 terms');
+      assert.ok(Array.isArray(data.explain?.why) && data.explain.why.length > 0, '缺少 why 分步推导');
+      return `风险 ${data.decision.risk.level} · 方案 ${data.suggestions.length} 个 · 序列 ${data.series.length} 天`;
     });
 
     // ================= 4. 基础数据 =================

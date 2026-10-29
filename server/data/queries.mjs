@@ -1,4 +1,4 @@
-/**
+﻿/**
  * queries.mjs — 读模型（把仓储 + 域层拼成"页面/工具"需要的数据形状）
  * ---------------------------------------------------------------------------
  * 为什么单独一层：HTTP 路由与 Agent 工具都需要「按方案批量算建议」，
@@ -8,6 +8,13 @@
 import { addDays } from '../domain/dates.mjs';
 import { DomainError, toErrorEnvelope } from '../domain/errors.mjs';
 import { AVG_SALES_WINDOW, PLAN_TYPES, formulaText } from '../domain/plans.mjs';
+import {
+  DEFAULT_RISK_STRATEGY,
+  RISK_LEVEL_LIST,
+  RISK_PRIORITY,
+  classifyRisk,
+} from '../domain/risk.mjs';
+import { ASSUMPTIONS } from '../domain/assumptions.mjs';
 import {
   computeDocumentedSuggestion,
   computeSigmaSuggestion,

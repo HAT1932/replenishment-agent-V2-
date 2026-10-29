@@ -11,10 +11,12 @@ import { useEffect, useState } from 'react';
 export type RouteName =
   | 'agent'
   | 'sessions'
+  | 'workbench'
   | 'suggestions'
   | 'plans'
   | 'plan-new'
   | 'plan-edit'
+  | 'sku'
   | 'orders'
   | 'drafts'
   | 'audit'
@@ -36,6 +38,8 @@ const ROUTE_EVENT = 'ra:route';
 const SIMPLE_ROUTES: Record<string, RouteName> = {
   agent: 'agent',
   sessions: 'sessions',
+  workbench: 'workbench',
+  sku: 'sku',
   suggestions: 'suggestions',
   plans: 'plans',
   orders: 'orders',
@@ -156,7 +160,8 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: '补货',
     items: [
-      { path: '/suggestions', label: '补货建议', icon: 'table', matches: ['suggestions'] },
+      { path: '/workbench', label: '补货工作台', icon: 'clock', matches: ['workbench'] },
+      { path: '/suggestions', label: '补货建议', icon: 'table', matches: ['suggestions', 'sku'] },
       { path: '/plans', label: '补货方案', icon: 'plan', matches: ['plans', 'plan-new', 'plan-edit'] },
       { path: '/drafts', label: '草稿单', icon: 'draft', matches: ['drafts'] },
       { path: '/orders', label: '正式单', icon: 'order', matches: ['orders'] },
@@ -175,6 +180,8 @@ export const NAV_GROUPS: NavGroup[] = [
 export const ROUTE_TITLES: Record<RouteName, string> = {
   agent: '智能补货助手',
   sessions: '历史会话',
+  workbench: '补货工作台',
+  sku: 'SKU 决策详情',
   suggestions: '补货建议',
   plans: '补货方案',
   'plan-new': '新建方案',

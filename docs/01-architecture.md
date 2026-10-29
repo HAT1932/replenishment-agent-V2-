@@ -103,3 +103,48 @@ App.tsx（外壳：导航 + 顶栏 + 路由）
 3. **调度器是进程内 setInterval**：单实例可用，多实例需要分布式锁。
 4. **SSE 无断点续传**：断流后可"重新载入历史"，但不支持 `Last-Event-ID` 重放。
 5. **演示数据合成**：seed 固定随机种子，且刻意植入缺日/过期/超卖三类脏数据。
+
+## 9. 可解释性与决策支持（v2.1 补回）
+
+v2 第一版把 v1 的「决策驾驶舱」整体当成"非文档口径"砍掉了，这是判断失误：
+砍掉的不只是增强指标，还有**辅助决策**这个职责本身。v2.1 把三件事补回，并划清可信边界。
+
+### 9.1 三个层级（从下往上，越往上越"增强"）
+
+| 层级 | 回答的问题 | 落点 | 溯源标注 |
+|---|---|---|---|
+| ① 行级解释 | 这一行的数量怎么算出来的？ | 建议表「解释」抽屉：terms / 逐日系数 / 闸门 / 分步推导 | `documented`（数字来自官方口径） |
+| ② 决策视图 | 我现在该先处理谁？会断货吗？钱压在哪？ | `#/workbench`：风险分级（缺货/紧急/建议/滞销/充足）+ 可售天数 + 预计断货日 + 库存资金 + 一键转草稿 | 数量 `documented`、风险指标 `enhancement`（页面级声明） |
+| ③ 单 SKU 下钻 | 换个方案会怎样？参数从哪来？ | `#/sku/:code`：库存事实 → 90 天趋势 → 4 方案对照 → 解释链与参数来源 | 每个方案各自带 provenance |
+
+### 9.2 新增接口
+
+```
+GET /api/workbench?plan_id&risk&sort&order&page&page_size&as_of&keyword
+  → { as_of, plan, risk_strategy, risk_levels, rows[], kpi, citation{quantity_provenance,decision_provenance,disclaimer}, assumptions[] }
+
+GET /api/sku/:code
+  → { sku, inventory, series(90天), sales_rows, suggestions[4 方案], explain(terms/why/coefficient_detail),
+      decision{ risk{level,reasons,cover_days,stockout_date,provenance:'enhancement'} } }
+```
+
+### 9.3 风险分级（`server/domain/risk.mjs`，纯函数）
+
+```
+缺货 : 有销量且 可售+在途 ≤ 0
+紧急 : 需补货且 可售天数 ≤ 3
+建议 : 需补货（低库存闸门通过）
+滞销 : 日均 < 0.5 且 可售天数 ≥ 90（占资金）
+充足 : 其余
+```
+
+- 阈值全部参数化（`urgent_cover_days` / `min_daily_sales` / `slow_moving_cover_days`），页面可按业态调；
+- **无官方文档依据** → 输出强制带 `provenance:'enhancement'`，页面上以「增强」标签 + 免责声明区分；
+- `asOf` 显式传入，不读系统时钟（与内核同纪律，10 个单测覆盖边界：在途延期断货、负可售、阈值覆盖、stale 只记原因）。
+
+### 9.4 为什么「风险分级」不等于「自动决策」
+
+三个理由，也是这套设计的上线前提：
+1. 风险阈值是**经验值**，不同业态（生鲜 vs 标品）差异极大，必须可调、可见；
+2. 「紧急」只代表**库存维度**紧急，不代表该采购（可能临期、可能待下架、可能谈好调拨）；
+3. 所以工作台只做**排序与建议**，把"批量转草稿"做成一次人工动作，提交仍需审批 —— 决策权留给人。

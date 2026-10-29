@@ -1,4 +1,4 @@
-﻿/**
+/**
  * suggestion.mjs — 补货建议主计算（文档口径三方案 + 增强 σ 方案）
  * ---------------------------------------------------------------------------
  * 本文件是「唯一算法出口」。纪律：
@@ -577,5 +577,10 @@ export function explainSuggestion(suggestion) {
     rounding: '向上取整 ceil（H1）',
     assumptions: suggestion.assumptions,
     steps: suggestion.why ?? [],
+    // 扁平别名：前端 ExplainPayload（解释抽屉 / SKU 详情 / 工作台）直接消费
+    why: suggestion.why ?? [],
+    coefficient_detail: suggestion.coefficient_detail ?? [],
+    coefficient_enabled: Boolean(suggestion.coefficient_enabled),
+    coefficient_exact: suggestion.coefficient_exact,
   };
 }

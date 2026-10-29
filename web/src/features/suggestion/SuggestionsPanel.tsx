@@ -22,6 +22,7 @@ import { apiPost, errorCode, errorMessage, probeEndpoint } from '../../lib/api';
 import { DASH, fmtInt, fmtMoney, fmtSigned } from '../../lib/format';
 import { useAsyncData } from '../../lib/hooks';
 import type { Draft, Suggestion, SuggestionsKpi, SuggestionsResponse } from '../../app/types';
+import { navigate } from '../../app/router';
 import { ExplainDrawer } from './ExplainDrawer';
 
 export interface SuggestionsPanelProps {
@@ -389,9 +390,19 @@ export function SuggestionsPanel({
       align: 'center',
       width: 92,
       render: (row) => (
-        <button type="button" className="ra-btn ra-btn-sm" onClick={() => setExplainTarget(row)}>
-          解释
-        </button>
+        <div className="ra-row-actions">
+          <button
+            type="button"
+            className="ra-btn ra-btn-sm"
+            onClick={() => navigate(`/sku/${encodeURIComponent(row.sku_code)}`)}
+            title="打开 SKU 详情：库存四层 / 90 天曲线 / 各方案对照 / 参数来源"
+          >
+            详情
+          </button>
+          <button type="button" className="ra-btn ra-btn-sm ra-btn-ghost" onClick={() => setExplainTarget(row)}>
+            解释
+          </button>
+        </div>
       ),
     },
   ];

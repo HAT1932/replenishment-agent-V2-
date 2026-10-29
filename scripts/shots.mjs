@@ -205,6 +205,26 @@ try {
   await goto(page.sessionId, `${base}/#/schedules`);
   await sleep(300);
   await shot(page.sessionId, '07-schedules.png');
+  // 6.5) 决策工作台（风险分级 / 可售天数 / 断货日 / 资金占用）
+  await goto(page.sessionId, `${base}/#/workbench`);
+  await waitFor(page.sessionId, "document.querySelectorAll('table tbody tr').length >= 3", '工作台表格', 20000);
+  const wbRows = await evalJs(page.sessionId, "document.querySelectorAll('table tbody tr').length");
+  const wbChips = await evalJs(page.sessionId, "document.querySelectorAll('.ra-chip').length");
+  const wbKpi = await evalJs(page.sessionId, "document.querySelectorAll('.ra-kpi').length");
+  assertRendered('工作台渲染', wbRows >= 3 && wbKpi >= 5, `rows=${wbRows} kpi=${wbKpi} chips=${wbChips}`);
+  await shot(page.sessionId, '09-workbench.png');
+
+  // 6.6) SKU 决策下钻（四层：库存事实 / 90 天曲线 / 方案对照 / 解释链）
+  const wb = await fetch(`${base}/api/workbench?page_size=1`).then((r) => r.json());
+  const skuCode = wb?.data?.rows?.[0]?.sku_code;
+  await goto(page.sessionId, `${base}/#/sku/${encodeURIComponent(skuCode)}`);
+  await waitFor(page.sessionId, "document.querySelectorAll('.ra-why-item').length >= 1", '解释链分步', 20000);
+  const whyCount = await evalJs(page.sessionId, "document.querySelectorAll('.ra-why-item').length");
+  const spark = await evalJs(page.sessionId, "document.querySelectorAll('.ra-section svg').length");
+  const planRows = await evalJs(page.sessionId, "document.querySelectorAll('.ra-section table tbody tr').length");
+  assertRendered('SKU 详情四层渲染', whyCount >= 1 && spark >= 1 && planRows >= 2, `why=${whyCount} spark=${spark} plans=${planRows}`);
+  await shot(page.sessionId, '10-sku-detail.png');
+
   // 7) 真实会话页：REUSE_SID 直接复用已跑完的会话（省一次模型调用）；LIVE=1 则现场跑一轮
   const reuseSid = process.env.REUSE_SID || '';
   if (reuseSid) {

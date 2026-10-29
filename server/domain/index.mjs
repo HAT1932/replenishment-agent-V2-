@@ -16,3 +16,4 @@ export * from './calendar.mjs';
 export * from './suggestion.mjs';
 
 export const DOMAIN_VERSION = '2.0.0';
+export * from './risk.mjs';

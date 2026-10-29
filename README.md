@@ -153,9 +153,9 @@ v1（`E:\REA_SHISHI`）是一份「有赞补货建议」的逆向分析与可运
 ## 9. 验收结果（本机实测）
 
 ```text
-npm test                    128 pass / 0 fail      （domain 32 · data 13 · agent 36 · api 41）
-node scripts/verify.mjs      50 PASS / 0 FAIL       （进程内起服务 + 临时库）
-node scripts/verify.mjs --live  53 PASS / 0 FAIL    （额外真实模型：tool_call / done / usage）
+npm test                    138 pass / 0 fail      （domain 42 · data 13 · agent 36 · api 41）
+node scripts/verify.mjs      54 PASS / 0 FAIL       （进程内起服务 + 临时库，含决策支持组）
+node scripts/verify.mjs --live  57 PASS / 0 FAIL    （额外真实模型：tool_call / done / usage）
 npm run typecheck             exit 0                （tsc --noEmit, strict）
 npm run build                 ✓ 68 modules → 258KB JS + 53KB CSS
 node scripts/live-e2e.mjs     一轮真实会话：4 次工具调用 → 建议产物 → 17 行建议，审计 10 条
@@ -165,3 +165,23 @@ node scripts/live-e2e.mjs     一轮真实会话：4 次工具调用 → 建议�
 `catalog.list_skus → plan.list → assumption.list → suggestion.compute`，
 产出 `artifact=suggestions`（17 行低库存、合计 1,505 件 / ¥66,341.09），
 会话落库 8 条消息（user/assistant/tool…），审计留痕 `tool_call`×4 + 轮次开始/结束。
+
+---
+
+## 10. 决策支持（v2.1 补回 v1 的驾驶舱）
+
+v2 第一版把 v1 的「补货工作台 + SKU 四层下钻」当成"非文档口径"砍掉，属于判断失误：砍掉的不只是增强指标，
+还有辅助决策这个职责。现已补回，并明确标注可信边界（数量=documented，风险=enhancement）：
+
+| 能力 | 位置 | 说明 |
+|---|---|---|
+| 补货工作台 | `#/workbench` | 风险分级（缺货/紧急/建议/滞销/充足）+ 可售天数 + 预计断货日 + 库存资金 + 7 天内断货数；勾选 → 批量转草稿 |
+| SKU 决策详情 | `#/sku/:code` | ① 库存事实 ② 90 天曲线 ③ 4 方案对照 ④ 解释链（terms/逐日系数/why）+ 参数来源 |
+| 行级解释抽屉 | 建议表「解释」 | terms / 逐日综合系数 / 闸门 / 分步推导 |
+
+![补货工作台](docs/screens/09-workbench.png)
+
+![SKU 决策详情](docs/screens/10-sku-detail.png)
+
+接口：`GET /api/workbench`（风险视图 + KPI + 页面级可信声明）、`GET /api/sku/:code`（含 `decision` 与 4 方案对照）。
+风险规则见 `server/domain/risk.mjs`（纯函数，10 项单测），阈值可配、必须显式标注为非官方口径。

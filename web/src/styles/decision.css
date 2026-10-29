@@ -1,0 +1,198 @@
+/**
+ * decision.css — 决策工作台 / SKU 详情的补充样式
+ * ---------------------------------------------------------------------------
+ * 与 shell.css 同样的定位：只补 `.ra-page` 骨架之外的局部类，不动既有视觉体系。
+ * 关键语义：
+ *   - `.ra-num-danger / .ra-num-negative`：危险数值（如超卖负数），与「只读建议」区分
+ *   - `.ra-row-danger / .ra-row-enhancement`：行级风险/增强标记（颜色 + 左侧色条）
+ */
+
+/* ============================== 页面骨架补充 ============================== */
+
+.ra-cell-sub {
+  font-size: 10.5px;
+  color: var(--ra-text-3);
+  line-height: 1.5;
+  font-family: var(--ra-font-mono);
+}
+
+.ra-kpi-sep {
+  color: var(--ra-text-3);
+  margin: 0 2px;
+}
+
+.ra-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+}
+
+/* ============================== 数值语义 ============================== */
+
+.ra-num-danger {
+  color: var(--ra-danger, #dc2626);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ra-num-negative {
+  color: var(--ra-danger, #dc2626);
+  font-variant-numeric: tabular-nums;
+}
+
+.ra-num-readonly {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: var(--ra-radius-sm);
+  background: var(--ra-bg-3, #f1f5f9);
+  border: 1px solid var(--ra-border-light);
+  color: var(--ra-text-2);
+  font-variant-numeric: tabular-nums;
+  cursor: not-allowed;
+}
+
+/* ============================== 风险 / 增强 行标记 ============================== */
+
+.ra-row-danger td:first-child {
+  box-shadow: inset 3px 0 0 var(--ra-danger, #dc2626);
+}
+
+.ra-row-danger td {
+  background: rgba(220, 38, 38, 0.04);
+}
+
+.ra-row-enhancement td:first-child {
+  box-shadow: inset 3px 0 0 var(--ra-purple, #7c3aed);
+}
+
+/* ============================== 芯片筛选组 ============================== */
+
+.ra-chip-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ra-chip-count {
+  margin-left: 5px;
+  padding: 0 5px;
+  border-radius: var(--ra-radius-pill);
+  background: var(--ra-bg-3, #f1f5f9);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ra-chip.ra-chip-active {
+  border-color: var(--ra-primary);
+  color: var(--ra-primary);
+  background: var(--ra-primary-light, #e8f0ff);
+}
+
+.ra-chip.ra-chip-active .ra-chip-count {
+  background: var(--ra-primary);
+  color: #fff;
+}
+
+/* ============================== 区块（Section 卡片） ============================== */
+
+.ra-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 16px;
+  margin-bottom: 12px;
+}
+
+.ra-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ra-sp-3);
+  border-bottom: 1px dashed var(--ra-border-light);
+  padding-bottom: 8px;
+}
+
+.ra-section-title {
+  margin: 0;
+  font-size: var(--ra-fs-sm);
+  font-weight: 600;
+  color: var(--ra-text);
+}
+
+.ra-section-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+/* ============================== SKU 详情局部 ============================== */
+
+.ra-window-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--ra-fs-xs);
+  color: var(--ra-text-2);
+  padding: 6px 2px 0;
+}
+
+.ra-formula-text {
+  display: block;
+  font-family: var(--ra-font-mono);
+  font-size: 11px;
+  color: var(--ra-text-2);
+  max-width: 420px;
+  line-height: 1.5;
+}
+
+.ra-param-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 16px;
+}
+
+.ra-param-title {
+  font-size: var(--ra-fs-xs);
+  font-weight: 600;
+  color: var(--ra-text-2);
+  margin-bottom: 6px;
+}
+
+.ra-json {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--ra-radius-sm);
+  border: 1px solid var(--ra-border-light);
+  background: var(--ra-bg);
+  font-family: var(--ra-font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.ra-assumption-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ra-assumption-list li {
+  margin: 0;
+}
+
+/* 解释链条目（详情页与产物面板共用） */
+.ra-section .ra-terms {
+  padding: 2px 0;
+}
+
+@media (max-width: 900px) {
+  .ra-param-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

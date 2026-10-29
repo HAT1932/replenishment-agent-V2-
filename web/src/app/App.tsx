@@ -15,6 +15,8 @@ import { ErrorState, EmptyState } from '../components/States';
 import { AgentPage } from '../features/agent/AgentPage';
 import { SessionsPage } from '../features/agent/SessionsPage';
 import { SuggestionsPage } from '../features/suggestion/SuggestionsPage';
+import { WorkbenchPage } from '../features/workbench/WorkbenchPage';
+import { SkuDetailPage } from '../features/sku/SkuDetailPage';
 import { PlansPage } from '../features/plan/PlansPage';
 import { PlanEditorPage } from '../features/plan/PlanEditorPage';
 import { DraftsPage } from '../features/order/DraftsPage';
@@ -55,6 +57,10 @@ function renderPage(route: ReturnType<typeof useRoute>, health: HealthInfo | nul
       return <AgentPage initialSessionId={route.query.get('s')} health={health} />;
     case 'sessions':
       return <SessionsPage />;
+    case 'workbench':
+      return <WorkbenchPage />;
+    case 'sku':
+      return <SkuDetailPage skuCode={route.param} />;
     case 'suggestions':
       return <SuggestionsPage />;
     case 'plans':
@@ -92,6 +98,8 @@ function renderPage(route: ReturnType<typeof useRoute>, health: HealthInfo | nul
 const ROUTE_DESC: Partial<Record<RouteName, string>> = {
   agent: '用自然语言驱动补货：助手只能通过工具取数，写操作只产草稿，提交需人工审批。',
   sessions: '按时间倒序的会话记录，可继续上次对话。',
+  workbench: '先看谁危险（风险分级/可售天数/断货日），再看钱压在哪（库存资金），最后勾选转草稿。',
+  sku: '单 SKU 四层下钻：库存事实 → 90 天趋势 → 各方案对照 → 解释链与参数来源。',
   suggestions: '按方案生成补货建议；建议数量只读，采购数量可改（偏离系统建议会标 Δ）。',
   plans: '系统默认方案可改不可删；自定义方案可增删改。',
   drafts: '草稿由助手或建议表产出，必须经人工审批才能提交为正式单。',

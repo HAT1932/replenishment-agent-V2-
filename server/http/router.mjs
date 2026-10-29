@@ -1,4 +1,4 @@
-/**
+﻿/**
  * router.mjs — HTTP 路由表（零框架，node:http）
  * ---------------------------------------------------------------------------
  * 设计纪律（契约 §3 / §6）：
@@ -36,6 +36,9 @@ const SCOPES = Object.freeze(['store', 'headquarters']);
 const SAFETY_MODES = Object.freeze(['fixed', 'dynamic']);
 const DEFAULT_PLAN_TYPES = Object.freeze(['avg_daily', 'stock_upper', 'custom', 'sigma']);
 const DRAFT_STATUSES = Object.freeze(['draft', 'approved', 'rejected', 'committed', 'all']);
+const RISK_LEVELS = Object.freeze(['缺货', '紧急', '建议', '滞销', '充足']);
+const WORKBENCH_SORTS = Object.freeze(['risk_priority', 'cover_days', 'amount', 'suggest_num', 'inventory_capital', 'avg_daily_sales']);
+const SORT_ORDERS = Object.freeze(['asc', 'desc']);
 
 /** 方案配置的入参上界（域层会再裁剪一次；这里只挡明显非法值） */
 const PLAN_CONFIG_BOUNDS = Object.freeze({
@@ -293,6 +296,16 @@ export function createRouter(options = {}) {
   };
   const provider = () => options.provider ?? deps.provider ?? null;
 
+  // ---- 工作台读模型（增强层；注入优先，便于测试 stub） ----
+  let workbenchModule = null;
+  async function workbenchApi() {
+    if (deps.workbench && typeof deps.workbench.buildWorkbench === 'function') return deps.workbench;
+    const q = deps.queries;
+    if (q && typeof q.buildWorkbench === 'function') return q;
+    workbenchModule ??= await import('../data/workbench.mjs');
+    return workbenchModule;
+  }
+
   async function audit(event) {
     try {
       const r = repo();
@@ -543,6 +556,33 @@ export function createRouter(options = {}) {
       return await queries().buildSuggestions(db, options);
     },
 
+    /* ------------------------- 决策工作台（增强层） ------------------------ */
+    async workbench({ query }) {
+      const pageInfo = V.assertPagination(query);
+      const asOf = query.get('as_of') ? V.assertDate(query.get('as_of'), 'as_of') : undefined;
+      const options = {
+        ...(query.get('plan_id') ? { plan_id: V.assertId(query.get('plan_id'), 'plan_id') } : {}),
+        ...(query.get('store_id') ? { store_id: V.assertId(query.get('store_id'), 'store_id') } : {}),
+        ...(query.get('category')
+          ? { category: V.assertString(query.get('category'), 'category', { max: 40 }) }
+          : {}),
+        ...(query.get('keyword')
+          ? { keyword: V.assertString(query.get('keyword'), 'keyword', { max: 60 }) }
+          : {}),
+        ...(asOf ? { as_of: asOf } : {}),
+        ...(query.get('risk') ? { risk: V.assertEnum(query.get('risk'), 'risk', RISK_LEVELS) } : {}),
+        ...(query.get('sort') ? { sort: V.assertEnum(query.get('sort'), 'sort', WORKBENCH_SORTS) } : {}),
+        ...(query.get('order') ? { order: V.assertEnum(query.get('order'), 'order', SORT_ORDERS) } : {}),
+        ...(query.get('scope')
+          ? { scope: V.assertEnum(query.get('scope'), 'scope', SCOPES, { default: 'store' }) }
+          : {}),
+        page: pageInfo.page,
+        page_size: pageInfo.page_size,
+      };
+      const api = await workbenchApi();
+      return await api.buildWorkbench(db, options);
+    },
+
     async skuDetail({ params, query }) {
       const asOf = query.get('as_of') ? V.assertDate(query.get('as_of'), 'as_of') : undefined;
       const scope = query.get('scope')
@@ -553,8 +593,21 @@ export function createRouter(options = {}) {
         ...(scope ? { scope } : {}),
       });
       if (!detail) throw notFound(`SKU ${params.code} 不存在`);
+      // 决策视图（增强层：风险分级/可售天数/断货日）；失败不影响主详情
+      let decision = null;
+      try {
+        const wb = await workbenchApi();
+        if (typeof wb.buildSkuDecision === 'function') {
+          decision = wb.buildSkuDecision(db, params.code, {
+            ...(asOf ? { asOf } : {}),
+            ...(query.get('plan_id') ? { plan_id: query.get('plan_id') } : {}),
+          });
+        }
+      } catch {
+        decision = null;
+      }
       // 视图适配：读模型可能给 `series/sales_rows`，契约要 `sales`
-      return { ...detail, sales: detail.sales ?? detail.sales_rows ?? [] };
+      return { ...detail, sales: detail.sales ?? detail.sales_rows ?? [], decision };
     },
 
     /* -------------------------------- 库存 --------------------------------- */
@@ -949,6 +1002,7 @@ export function createRouter(options = {}) {
     { method: 'DELETE', path: /^\/api\/plans\/(?<id>[^/]+)$/, handler: handlers.deletePlan },
 
     { method: 'GET', path: /^\/api\/suggestions$/, handler: handlers.suggestions },
+    { method: 'GET', path: /^\/api\/workbench$/, handler: handlers.workbench },
     { method: 'GET', path: /^\/api\/sku\/(?<code>[^/]+)$/, handler: handlers.skuDetail },
 
     { method: 'GET', path: /^\/api\/inventory$/, handler: handlers.inventory },
