@@ -1,0 +1,407 @@
+/* =============================================================================
+ * base.css — 重置 + 排版 + 工具类
+ * 数值排版纪律：所有数字使用 tabular-nums，避免列宽跳动（v1 的 `.num` 约定）。
+ * ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--ra-font);
+  font-size: var(--ra-fs-base);
+  line-height: 1.55;
+  color: var(--ra-text);
+  background: var(--ra-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  line-height: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+figure,
+blockquote,
+dl,
+dd,
+ul,
+ol {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: var(--ra-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--ra-mono);
+  font-size: 0.96em;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--ra-border-light);
+  margin: var(--ra-sp-4) 0;
+}
+
+/* 键盘可达：只对键盘焦点显示焦点环，鼠标点击不显示 */
+:focus-visible {
+  outline: 2px solid var(--ra-primary);
+  outline-offset: 1px;
+  border-radius: var(--ra-radius-sm);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+::selection {
+  background: var(--ra-primary-light);
+  color: var(--ra-text);
+}
+
+/* 滚动条：细、低对比，避免抢视觉 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cdd1d9 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #cdd1d9;
+  border-radius: var(--ra-radius-pill);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #b2b7c1;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ------------------------------ 数字排版 ------------------------------ */
+
+/* 表格 / KPI / 金额：等宽数字，右对齐不跳动 */
+.ra-num,
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: 0;
+}
+
+.ra-num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ra-mono {
+  font-family: var(--ra-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------ 文本工具类 ------------------------------ */
+
+.ra-muted {
+  color: var(--ra-text-2);
+}
+
+.ra-dim {
+  color: var(--ra-text-3);
+}
+
+.ra-faint {
+  color: var(--ra-text-4);
+}
+
+.ra-xs {
+  font-size: var(--ra-fs-xs);
+}
+
+.ra-sm {
+  font-size: var(--ra-fs-sm);
+}
+
+.ra-strong {
+  font-weight: 600;
+}
+
+.ra-nowrap {
+  white-space: nowrap;
+}
+
+.ra-break {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.ra-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ra-link {
+  color: var(--ra-primary);
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ra-link:hover {
+  text-decoration: underline;
+}
+
+.ra-danger-text {
+  color: var(--ra-danger);
+}
+
+.ra-success-text {
+  color: var(--ra-success);
+}
+
+.ra-warning-text {
+  color: #b35c00;
+}
+
+/* ------------------------------ 布局工具类 ------------------------------ */
+
+.ra-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ra-sp-3);
+}
+
+.ra-row-top {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ra-sp-3);
+}
+
+.ra-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ra-sp-3);
+}
+
+.ra-wrap {
+  flex-wrap: wrap;
+}
+
+.ra-grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ra-right {
+  margin-left: auto;
+}
+
+.ra-center {
+  display: grid;
+  place-items: center;
+}
+
+.ra-gap-1 {
+  gap: var(--ra-sp-1);
+}
+.ra-gap-2 {
+  gap: var(--ra-sp-2);
+}
+.ra-gap-3 {
+  gap: var(--ra-sp-3);
+}
+.ra-gap-4 {
+  gap: var(--ra-sp-4);
+}
+.ra-gap-5 {
+  gap: var(--ra-sp-5);
+}
+
+.ra-mt-2 {
+  margin-top: var(--ra-sp-2);
+}
+.ra-mt-3 {
+  margin-top: var(--ra-sp-3);
+}
+.ra-mt-4 {
+  margin-top: var(--ra-sp-4);
+}
+.ra-mt-5 {
+  margin-top: var(--ra-sp-5);
+}
+.ra-mb-3 {
+  margin-bottom: var(--ra-sp-3);
+}
+.ra-mb-4 {
+  margin-bottom: var(--ra-sp-4);
+}
+
+/* 仅供读屏：视觉隐藏但保留可访问名 */
+.ra-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 跳转到主内容（键盘用户第一站） */
+.ra-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: var(--ra-sp-3) var(--ra-sp-4);
+  background: var(--ra-primary);
+  color: #fff;
+  border-radius: 0 0 var(--ra-radius) 0;
+}
+
+.ra-skip:focus {
+  left: 0;
+}
+
+/* ------------------------------ 排版元素 ------------------------------ */
+
+.ra-h1 {
+  font-size: var(--ra-fs-xl);
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.ra-h2 {
+  font-size: var(--ra-fs-lg);
+  font-weight: 600;
+}
+
+.ra-h3 {
+  font-size: var(--ra-fs-md);
+  font-weight: 600;
+}
+
+.ra-section-title {
+  font-size: var(--ra-fs-sm);
+  font-weight: 600;
+  color: var(--ra-text-2);
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: var(--ra-sp-2);
+}
+
+.ra-section-title::before {
+  content: '';
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--ra-primary);
+}
+
+details > summary {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details > summary:focus-visible {
+  outline: 2px solid var(--ra-primary);
+  outline-offset: 2px;
+}
+
+.ra-kbd {
+  font-family: var(--ra-mono);
+  font-size: var(--ra-fs-xs);
+  padding: 0 4px;
+  border: 1px solid var(--ra-border);
+  border-bottom-width: 2px;
+  border-radius: var(--ra-radius-sm);
+  background: var(--ra-white);
+  color: var(--ra-text-2);
+  white-space: nowrap;
+}
+
+/* 尊重系统「减少动效」 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

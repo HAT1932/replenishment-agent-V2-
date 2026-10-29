@@ -1,0 +1,34 @@
+{
+  "name": "replenishment-agent",
+  "private": true,
+  "version": "2.0.0",
+  "description": "智能补货 Agent · 对话式 Copilot + 定时补货任务（确定性内核 + 可解释建议 + 人工审批 + 审计留痕）",
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "dev": "node server/index.mjs",
+    "dev:web": "vite",
+    "build": "vite build",
+    "start": "node server/index.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test",
+    "test:domain": "node --test test/domain",
+    "test:agent": "node --test test/agent",
+    "test:api": "node --test test/api",
+    "verify": "node scripts/verify.mjs",
+    "seed": "node scripts/reseed.mjs"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.3.4",
+    "typescript": "5.7.2",
+    "vite": "5.4.11"
+  }
+}

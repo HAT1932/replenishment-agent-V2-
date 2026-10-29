@@ -1,0 +1,339 @@
+/**
+ * shell.css — 外壳与产物面板补样式（v2 集成期新增）
+ * ---------------------------------------------------------------------------
+ * 为什么单独一层：`features.css` 由并行开发产出，命名以 `.ra-topbar-chip` / `.ra-status` /
+ * `.ra-nav-item[aria-current]` 为准；而外壳标记（App.tsx）与产物面板（解释链 / 逐日系数）
+ * 是在集成期补齐的，统一放这里，避免改动既有文件造成回归。
+ * 只做「补缺」与「对齐」，不覆盖既有视觉体系。
+ */
+
+/* ============================== 外壳骨架 ============================== */
+
+.ra-brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ra-nav-ico {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  opacity: 0.85;
+}
+
+/* 移动端导航开关（桌面隐藏） */
+.ra-nav-toggle {
+  display: none;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border: 1px solid var(--ra-border);
+  border-radius: var(--ra-radius-sm);
+  background: var(--ra-white);
+  color: var(--ra-text-2);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.ra-topbar-desc {
+  font-size: var(--ra-fs-xs);
+  font-weight: 400;
+  color: var(--ra-text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 46vw;
+}
+
+/* Agent 页需要满高（会话/产物双栏各自滚动） */
+.ra-content.ra-content-flush {
+  padding: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ============================== Agent 双栏 ============================== */
+
+.ra-agent-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.ra-agent-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--ra-sp-3);
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--ra-border);
+  background: var(--ra-white);
+  flex-wrap: wrap;
+}
+
+.ra-agent-bar-left,
+.ra-agent-bar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--ra-sp-2);
+  flex-wrap: wrap;
+}
+
+.ra-agent-bar-right {
+  margin-left: auto;
+}
+
+.ra-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+
+.ra-pill-mono {
+  font-family: var(--ra-font-mono);
+  font-size: 10.5px;
+}
+
+.ra-sidebar-foot {
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--ra-sidebar-border);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* ============================== 产物面板 ============================== */
+
+.ra-artifact-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  padding: 12px;
+  gap: 10px;
+}
+
+.ra-artifact-panel > * {
+  min-height: 0;
+}
+
+.ra-artifact-empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ra-artifact {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--ra-white);
+  border: 1px solid var(--ra-border);
+  border-radius: var(--ra-radius);
+  padding: 14px 16px;
+}
+
+.ra-artifact-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ra-sp-3);
+}
+
+.ra-artifact-title {
+  font-size: var(--ra-fs-sm);
+  font-weight: 600;
+  color: var(--ra-text);
+}
+
+/* 解释链：闸门 / 逐日系数 / 分步推导 / 数值项 */
+.ra-explain-guard {
+  display: flex;
+  align-items: center;
+  gap: var(--ra-sp-2);
+  padding: 7px 10px;
+  border-radius: var(--ra-radius-sm);
+  background: var(--ra-warn-light, #fff7e6);
+  border: 1px solid var(--ra-warn-border, #ffe1a8);
+  font-size: var(--ra-fs-xs);
+  color: var(--ra-text-2);
+}
+
+.ra-explain-guard[data-alert='false'] {
+  background: var(--ra-success-light);
+  border-color: var(--ra-success-border);
+}
+
+.ra-coef {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ra-coef-title {
+  font-size: var(--ra-fs-xs);
+  color: var(--ra-text-3);
+}
+
+.ra-coef-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 8px 6px 0;
+  border: 1px solid var(--ra-border-light);
+  border-radius: var(--ra-radius-sm);
+  background: var(--ra-bg);
+  min-height: 96px;
+  overflow-x: auto;
+}
+
+.ra-coef-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 30px;
+  flex: 0 0 auto;
+}
+
+.ra-coef-bar-fill {
+  width: 16px;
+  border-radius: 3px 3px 0 0;
+  background: var(--ra-primary-light, #e8f0ff);
+  border: 1px solid var(--ra-primary-border, #bcd4ff);
+}
+
+.ra-coef-bar-fill[data-factor='up'] {
+  background: var(--ra-warn, #f59e0b);
+  border-color: var(--ra-warn);
+}
+
+.ra-coef-bar-label {
+  font-size: 9.5px;
+  color: var(--ra-text-3);
+  font-family: var(--ra-font-mono);
+  white-space: nowrap;
+}
+
+.ra-why {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ra-why-item {
+  display: flex;
+  gap: var(--ra-sp-3);
+  padding: 8px 10px;
+  border-radius: var(--ra-radius-sm);
+  background: var(--ra-bg);
+  border: 1px solid var(--ra-border-light);
+}
+
+.ra-why-step {
+  flex: 0 0 72px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ra-primary);
+}
+
+.ra-why-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  font-size: var(--ra-fs-xs);
+}
+
+.ra-why-body code {
+  font-family: var(--ra-font-mono);
+  color: var(--ra-text-2);
+  word-break: break-all;
+}
+
+.ra-why-value {
+  font-family: var(--ra-font-mono);
+  color: var(--ra-text);
+}
+
+.ra-terms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 4px 12px;
+}
+
+.ra-term {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px dashed var(--ra-border-light);
+  font-size: var(--ra-fs-xs);
+}
+
+.ra-term-key {
+  color: var(--ra-text-3);
+  font-family: var(--ra-font-mono);
+}
+
+.ra-term-value {
+  color: var(--ra-text);
+  font-family: var(--ra-font-mono);
+}
+
+/* ============================== 启动失败兜底 ============================== */
+
+.ra-boot-error {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--ra-bg);
+}
+
+/* ============================== 响应式 ============================== */
+
+@media (max-width: 1080px) {
+  .ra-topbar-desc {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .ra-nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ra-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 60;
+    transform: translateX(-100%);
+    transition: transform 0.16s ease;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+  }
+
+  .ra-shell.ra-nav-open .ra-sidebar {
+    transform: translateX(0);
+  }
+
+  .ra-agent {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ra-agent-right {
+    border-top: 1px solid var(--ra-border);
+  }
+}
