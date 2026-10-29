@@ -153,7 +153,7 @@ v1（`E:\REA_SHISHI`）是一份「有赞补货建议」的逆向分析与可运
 ## 9. 验收结果（本机实测）
 
 ```text
-npm test                    138 pass / 0 fail      （domain 42 · data 13 · agent 36 · api 41）
+npm test                    144 pass / 0 fail      （domain 42 · data 13 · agent 36 · api 41 · config 6 + 根级 6）
 node scripts/verify.mjs      54 PASS / 0 FAIL       （进程内起服务 + 临时库，含决策支持组）
 node scripts/verify.mjs --live  57 PASS / 0 FAIL    （额外真实模型：tool_call / done / usage）
 npm run typecheck             exit 0                （tsc --noEmit, strict）
