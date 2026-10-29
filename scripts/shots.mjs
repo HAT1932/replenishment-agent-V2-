@@ -225,6 +225,27 @@ try {
   assertRendered('SKU 详情四层渲染', whyCount >= 1 && spark >= 1 && planRows >= 2, `why=${whyCount} spark=${spark} plans=${planRows}`);
   await shot(page.sessionId, '10-sku-detail.png');
 
+  // 6.7) AI 解读抽屉（PRD US-01）：点第一行「解释」→ 模型按因子写四段解释 → 数值对账
+  await goto(page.sessionId, `${base}/#/suggestions`);
+  await waitFor(page.sessionId, "document.querySelectorAll('table tbody tr').length > 0", '建议表', 20000);
+  const opened = await evalJs(
+    page.sessionId,
+    "(() => { const btns=[...document.querySelectorAll('table tbody tr button')].filter(b=>b.textContent.trim()==='解释'); if(!btns.length) return false; btns[0].click(); return true; })()",
+  );
+  assertRendered('解释按钮可点', opened === true, '未找到行内「解释」按钮');
+  await waitFor(page.sessionId, "document.querySelector('.ra-ai-text') || document.querySelector('.ra-ai-loading')", 'AI 解读面板', 20000);
+  await waitFor(page.sessionId, "document.querySelector('.ra-ai-text')", 'AI 解释文本', 60000);
+  const aiText = await evalJs(page.sessionId, "document.querySelector('.ra-ai-text')?.innerText?.length ?? 0");
+  const factorRows = await evalJs(page.sessionId, "document.querySelectorAll('.ra-ai-factor').length");
+  const verifyBadge = await evalJs(page.sessionId, "document.querySelector('.ra-ai-badges')?.innerText ?? ''");
+  const whatifPresets = await evalJs(page.sessionId, "document.querySelectorAll('.ra-whatif-presets button').length");
+  assertRendered(
+    'AI 解读渲染',
+    aiText > 150 && factorRows >= 2 && whatifPresets >= 1,
+    `chars=${aiText} factors=${factorRows} whatif=${whatifPresets} badges=${verifyBadge.slice(0, 40)}`,
+  );
+  await shot(page.sessionId, '11-ai-explain.png');
+
   // 7) 真实会话页：REUSE_SID 直接复用已跑完的会话（省一次模型调用）；LIVE=1 则现场跑一轮
   const reuseSid = process.env.REUSE_SID || '';
   if (reuseSid) {

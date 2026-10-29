@@ -363,6 +363,60 @@ async function main() {
       return `风险 ${data.decision.risk.level} · 方案 ${data.suggestions.length} 个 · 序列 ${data.series.length} 天`;
     });
 
+    // ================= 3.6 AI 解释与 What-if =================
+    group('3.6 AI 解释与 What-if（PRD US-01/US-02）');
+
+    let aiExplain = null;
+    await check('POST /api/explain 返回四段解释 + 因子 + 数值对账', async () => {
+      assert.ok(workbenchRow?.sku_code, '没有可用 SKU');
+      const { body, status } = await api.post('/api/explain', { sku_code: workbenchRow.sku_code });
+      assert.equal(status, 200);
+      const data = body.data;
+      assert.ok(data.explanation?.text && data.explanation.text.length > 80, '解释文本过短');
+      for (const section of ['【结论】', '【账怎么算的】', '【关键判断】', '【风险与建议】']) {
+        assert.ok(data.explanation.text.includes(section), `解释缺少段落 ${section}`);
+      }
+      assert.ok(['llm', 'deterministic'].includes(data.explanation.source), '未知解释来源');
+      assert.ok(data.explanation.verification && typeof data.explanation.verification.checked === 'number');
+      assert.equal(data.explanation.verification.ok, true, `存在未溯源数字：${(data.explanation.verification.unknown ?? []).join(',')}`);
+      assert.ok(Array.isArray(data.grounding?.factors) && data.grounding.factors.length >= 2, '缺少决策因子');
+      assert.equal(data.grounding.factor_identity?.ok, true, '因子加不回未截断值');
+      assert.ok(data.grounding.confidence?.level, '缺少置信度');
+      assert.ok(data.grounding.urgency?.level, '缺少紧急度');
+      aiExplain = data;
+      return `${data.explanation.source} · ${data.explanation.text.length} 字 · 对账 ${data.explanation.verification.grounded}/${data.explanation.verification.checked} · 因子 ${data.grounding.factors.length} 项`;
+    });
+
+    await check('POST /api/whatif：改目标可售天数 → 数量变化且给出差额', async () => {
+      const { body, status } = await api.post('/api/whatif', {
+        sku_code: workbenchRow.sku_code,
+        overrides: { coverage_days: 25 },
+      });
+      assert.equal(status, 200);
+      const data = body.data;
+      assert.notEqual(data.after.suggest_num, data.before.suggest_num, '改可售天数应改变建议量');
+      assert.equal(data.delta.qty, data.after.suggest_num - data.before.suggest_num);
+      assert.ok(data.factor_delta.length >= 1, '应给出因子级差额');
+      return `${data.before.suggest_num} → ${data.after.suggest_num}（Δ${data.delta.qty}）`;
+    });
+
+    await check('POST /api/whatif：非法/越界参数 → 400（不静默忽略）', async () => {
+      const bad = await api.post('/api/whatif', { sku_code: workbenchRow.sku_code, overrides: { magic: 1 } });
+      assert.equal(bad.status, 400);
+      assert.equal(bad.body.error.code, 'VALIDATION_ERROR');
+      const outOfRange = await api.post('/api/whatif', {
+        sku_code: workbenchRow.sku_code,
+        overrides: { coverage_days: 999 },
+      });
+      assert.equal(outOfRange.status, 400);
+    });
+
+    await check('POST /api/explain：未知 SKU → 404', async () => {
+      const { status, body } = await api.post('/api/explain', { sku_code: 'SKU-NOT-EXIST' });
+      assert.equal(status, 404);
+      assert.equal(body.error.code, 'NOT_FOUND');
+    });
+
     // ================= 4. 基础数据 =================
     group('4. 安全库存与节假日');
 

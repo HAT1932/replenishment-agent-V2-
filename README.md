@@ -186,3 +186,23 @@ v2 第一版把 v1 的「补货工作台 + SKU 四层下钻」当成"非文档�
 
 接口：`GET /api/workbench`（风险视图 + KPI + 页面级可信声明）、`GET /api/sku/:code`（含 `decision` 与 4 方案对照）。
 风险规则见 `server/domain/risk.mjs`（纯函数，10 项单测），阈值可配、必须显式标注为非官方口径。
+
+---
+
+## 11. AI 解读：模型解释「为什么这么补」，数字逐句对账
+
+补货建议的每一行都能生成一段**四段式中文解释**（结论 / 账怎么算的 / 关键判断 / 风险与建议），
+由真实模型（`deepseek-flash`）基于服务端因子撰写；模型不可用时自动退化为确定性解释。
+
+![AI 解读](docs/screens/11-ai-explain.png)
+
+可信机制（都不依赖模型自觉）：
+
+1. **因子分解可加回**：`Σ因子影响 = 未截断建议值`（`factor_identity`，误差 >0.01 即视为失败）；
+2. **数值对账**：解释文本里的每个数字都要能在服务端数据中找到，未溯源的会以红色徽标列出（图示 `数字已对账 13/13`）；
+3. **口径分离**：建议数量=官方文档口径，置信度/紧急度/异常=本实现增强，解释里必须点明；
+4. **What-if 确定性重算**：改目标可售天数/前置期/缓冲天数 → 服务端内核重算并给出差额，
+   不让模型"估"（对应 PRD US-02）。
+
+接口：`POST /api/explain`、`POST /api/whatif`；实现：`server/domain/factors.mjs`、`server/agent/explain.mjs`、`server/data/whatif.mjs`。
+PRD 对照（含未做项）见 [docs/05-prd-alignment.md](docs/05-prd-alignment.md)。

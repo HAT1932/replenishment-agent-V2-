@@ -51,11 +51,12 @@ npm run dev:web           # 前端 5273，/api 代理到 3200
 
 ```bash
 npm test                    # 128 项：domain 32 / data 13 / agent 36 / api 41
-node scripts/verify.mjs     # 50 项端到端（进程内起服务 + 临时库）
+node scripts/verify.mjs     # 58 项端到端（进程内起服务 + 临时库，含 AI 解释/What-if）
 node scripts/verify.mjs --live   # 追加 3 项真实模型（tool_call / done / usage）
 npm run typecheck           # tsc --noEmit（strict）
 npm run build               # vite build
 node scripts/live-e2e.mjs   # 一轮真实会话，打印工具时间线/artifacts/审计
+node scripts/explain-smoke.mjs  # 真实模型生成一条解释（含对账）+ What-if 冒烟
 node scripts/shots.mjs      # headless Chrome 截图 + 渲染断言（docs/screens/*.png）
 ```
 
@@ -67,6 +68,8 @@ node scripts/shots.mjs      # headless Chrome 截图 + 渲染断言（docs/scree
 |---|---|---|
 | 页面白屏 / "后端连接失败" | 未 build 或后端未起 | `npm run build && npm start`；开发模式需同时跑 `dev` 与 `dev:web` |
 | `/api/health` 显示 `degraded` | 数据层未就绪 | 看启动日志；删 `data/*.db` 重播种 |
+| `/api/explain` 返回 `source: deterministic` | 未配置 key / 上游失败 / 超时 | 检查 `.env` 的 `LLM_API_KEY`；这是**预期降级**，解释仍可用（无幻觉风险） |
+| `.env` 里 key 为空导致一直走 mock | 环境回滚或手工编辑丢失 | `cp .env.example .env` 重新填 key；`.env` 建议保持**纯 ASCII、一行一个 KEY=VALUE** |
 | 对话报 `UPSTREAM_LLM_ERROR` | key 无效/额度/网络 | 检查 `.env`；或切 `LLM_PROVIDER=mock` 验证非模型链路 |
 | SSE 没有流式效果 | 反向代理缓冲 | 响应头已带 `X-Accel-Buffering: no`；nginx 需 `proxy_buffering off` |
 | 建议数量与手算差 1 件 | 取整假设 H1（ceil） | 属预期；见 `#/assumptions` |
@@ -91,7 +94,7 @@ copy data\agent.db data\agent.db.bak
 | `server/domain/*.mjs` | 确定性内核（唯一算法出口，全量单测） |
 | `server/data/queries.mjs` | 读模型：批量建议 + KPI + SKU 详情 |
 | `server/agent/runtime.mjs` | Agent 循环/预算/审批闸门/事件流 |
-| `server/agent/tools/*.mjs` | 15 个工具（只读 13 + 产草稿 2）；含 `workbench.get` 决策视图 |
+| `server/agent/tools/*.mjs` | 16 个工具（只读 14 + 产草稿 2）；含 `workbench.get`、`suggestion.whatif` |
 | `server/http/router.mjs` | REST 路由 + SSE 入口 |
 | `web/src/features/agent/*` | 会话 + 工具时间线 + 产物面板 |
 | `docs/00-migration.md` | v1→v2 取/改/弃台账与回归用例 |

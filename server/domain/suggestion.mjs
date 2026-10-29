@@ -11,12 +11,33 @@ import { coverageCoefficient } from './calendar.mjs';
 import { addDays, assertDate, diffDays } from './dates.mjs';
 import { demandSigmaDaily, demandWindow, forecastDemand } from './demand.mjs';
 import { validationError } from './errors.mjs';
+import {
+  buildDecisionFactors,
+  deriveAnomalies,
+  deriveConfidence,
+  deriveUrgency,
+  verifyFactorIdentity,
+} from './factors.mjs';
 import { inventorySnapshot } from './inventory.mjs';
 import { ceilInt, ceilToPack, daysOfCover, reorderPoint, roundTo, safetyStock, sigmaOverLeadTime, turnoverRate } from './math.mjs';
 import { AVG_SALES_WINDOW, PLAN_TYPES, PROVENANCE, formulaText, resolvePlanConfig } from './plans.mjs';
 import { evaluateLowStockGate, resolveSafetyStock } from './safety.mjs';
 
 const DEFAULT_FRESHNESS_DAYS = 1;
+
+/**
+ * 挂决策支持字段（PRD US-01：建议必须附带因子解释）。
+ * 只做归因与分级，不改变任何数量口径。
+ */
+function attachDecisionSupport(suggestion, { plan, inventory, window }) {
+  const factors = buildDecisionFactors(suggestion);
+  suggestion.factors = factors;
+  suggestion.factor_identity = verifyFactorIdentity(suggestion);
+  suggestion.confidence = deriveConfidence({ window, inventory });
+  suggestion.urgency = deriveUrgency({ suggestion, plan, inventory });
+  suggestion.anomaly = deriveAnomalies({ suggestion, plan, window });
+  return suggestion;
+}
 
 function uniq(list) {
   return [...new Set(list.filter(Boolean))];
@@ -272,7 +293,7 @@ export function computeDocumentedSuggestion(input) {
 
   /** 逐项归因（供 suggestion.explain / 前端解释抽屉） */
   suggestion.why = buildWhy({ suggestion, plan, coef, gate, safety, window, inv });
-  return suggestion;
+  return attachDecisionSupport(suggestion, { plan, inventory: inv, window });
 }
 
 function buildWhy({ suggestion, plan, coef, gate, safety, window, inv }) {
@@ -394,7 +415,7 @@ export function computeSigmaSuggestion(input) {
     safety.mode === 'dynamic' ? 'H5' : null,
   ]);
 
-  return {
+  const suggestion = {
     sku_id: sku.id ?? sku.sku_id ?? null,
     store_id: sku.store_id ?? null,
     store_name: sku.store_name ?? '',
@@ -496,6 +517,7 @@ export function computeSigmaSuggestion(input) {
     amount,
     tax_amount: roundTo(amount * taxRate, 2),
   };
+  return attachDecisionSupport(suggestion, { plan, inventory: inv, window });
 }
 
 /** 统一入口：按 plan.plan_type 分派 */
@@ -582,5 +604,11 @@ export function explainSuggestion(suggestion) {
     coefficient_detail: suggestion.coefficient_detail ?? [],
     coefficient_enabled: Boolean(suggestion.coefficient_enabled),
     coefficient_exact: suggestion.coefficient_exact,
+    // PRD US-01：决策因子 / 置信度 / 紧急度 / 异常，随解释一起返回
+    factors: suggestion.factors ?? [],
+    factor_identity: suggestion.factor_identity ?? null,
+    confidence: suggestion.confidence ?? null,
+    urgency: suggestion.urgency ?? null,
+    anomaly: suggestion.anomaly ?? null,
   };
 }

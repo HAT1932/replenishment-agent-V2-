@@ -226,6 +226,7 @@ createSession(db, {title}) / getSession / listSessions / appendMessage / listMes
 | 5 | `suggestion.compute` | `{plan_id?, plan?, store_id?, sku_codes?, category?, keyword?, as_of?, expected_arrival?, only_low?}` | `{as_of, expected_arrival, formula_text, plan:{...}, rows:[Suggestion], kpi, guard_note}` | 否 |
 | 5.5 | `workbench.get` | `{risk?, plan_id?, keyword?, store_id?, as_of?, sort?, order?, limit?}` | `{as_of, plan, risk_levels, risk_strategy, kpi, total, top:[{sku_code, risk_level, cover_days, stockout_date, inventory_capital, ...}], citation}` | 否（但风险指标为 enhancement 口径，meta 带 H10） |
 | 6 | `suggestion.explain` | `{sku_code, plan_id?, plan?}` | `{terms, coefficient_detail, guard, suggest_raw_exact, why:[{step,expr,value,note}]}` | 否 |
+| 6.5 | `suggestion.whatif` | `{sku_code, plan_id?, as_of?, overrides:{purchase_cycle_days?|coverage_days?|safety_days?|service_level?}}` | `{before, after, delta, factor_delta, arrival{...}, parameter_effects, overrides{applied,rejected}}` | 否（确定性重算，非模型估算） |
 | 7 | `plan.list` | `{}` | `{plans:[{plan_id,plan_name,plan_type,formula_text,provenance,config}]}` | 否 |
 | 8 | `order.create_draft` | `{kind:'purchase'\|'apply', items:[{sku_code,apply_num}], expected_arrival?, remark?}` | `{draft_id, kind, items, total_qty, total_amount, status:'draft'}` | **草稿** |
 | 9 | `order.commit` | `{draft_id, approval_id}` | `{order_id, kind, biz_no, status}` | **必须审批** |
@@ -301,6 +302,8 @@ computeNextRun(cadence, from) -> iso
 | GET | `/api/plans`、`/api/plans/:id` | 方案 |
 | POST/PUT/DELETE | `/api/plans[/:id]` | 方案增改删（系统默认禁删） |
 | GET | `/api/suggestions` | `plan_id,store_id,category,keyword,as_of,expected_arrival,only_low,page,page_size` → `{rows,kpi,plan,formula_text,...}` |
+| `POST /api/explain` | body `{sku_code, plan_id?, as_of?, session_id?}` | `{explanation:{text, source: 'llm'|'deterministic', model, degraded, verification:{ok, checked, grounded, unknown[]}, generated_at}, grounding:{factors, factor_identity, confidence, urgency, anomaly, plan, formula_text, assumptions}}` |
+| `POST /api/whatif` | body `{sku_code, plan_id?, as_of?, overrides:{purchase_cycle_days?|coverage_days?|safety_days?|service_level?}}` | `{before, after, delta:{qty, amount, qty_pct}, factor_delta[], arrival:{before,after,changed}, parameter_effects, overrides:{applied,rejected}}` |
 | GET | `/api/sku/:code` | SKU 详情：库存四层 + 90 天曲线 + 各方案建议 + 解释 |
 | GET | `/api/inventory`、`/api/safety-stock`（GET/PUT）、`/api/holidays`（GET/POST/DELETE） | 基础数据 |
 | GET | `/api/drafts`、`/api/drafts/:id` | 草稿 |

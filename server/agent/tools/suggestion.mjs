@@ -289,6 +289,11 @@ export function createSuggestionTools() {
               suggest_num: row.suggest_num,
               assumptions: row.assumptions,
               steps: row.why ?? [],
+              factors: row.factors ?? [],
+              factor_identity: row.factor_identity ?? null,
+              confidence: row.confidence ?? null,
+              urgency: row.urgency ?? null,
+              anomaly: row.anomaly ?? null,
             };
         return {
           sku_code: row.sku_code,
@@ -318,6 +323,61 @@ export function createSuggestionTools() {
               ref: { sku_code: data.sku_code, as_of: data.as_of, plan_type: data.plan?.plan_type },
             },
           ],
+        };
+      },
+    },
+    {
+      name: 'suggestion.whatif',
+      provenance: 'documented',
+      write: false,
+      description:
+        'What-if 确定性重算（只读）：改「补货前置期 / 目标可售天数 / 缓冲天数 / 服务水平」后，用**同一个域内核**重算建议量，' +
+        '返回 before/after 与差额、因子级变化。不要自己估算差额——差额只能来自这个工具。' +
+        '白名单参数：purchase_cycle_days(1-90) / coverage_days(1-180) / safety_days(0-60) / service_level(0.5-0.999)。',
+      parameters: {
+        type: 'object',
+        properties: {
+          sku_code: { type: 'string', description: 'SKU 编码' },
+          plan_id: { type: 'string', description: '方案 id；不传用默认方案' },
+          as_of: { type: 'string', description: '业务日期 YYYY-MM-DD' },
+          overrides: {
+            type: 'object',
+            description: '要覆盖的参数，例如 { "purchase_cycle_days": 5 }',
+            properties: {
+              purchase_cycle_days: { type: 'integer', description: '补货前置期/采购周期（天）' },
+              coverage_days: { type: 'integer', description: '目标可售天数（天）' },
+              safety_days: { type: 'number', description: '缓冲天数' },
+              service_level: { type: 'number', description: '服务水平（σ 方案）' },
+            },
+            additionalProperties: false,
+          },
+          expected_arrival: { type: 'string', description: '预计到货日 YYYY-MM-DD' },
+        },
+        required: ['sku_code', 'overrides'],
+        additionalProperties: false,
+      },
+      async execute(args, ctx) {
+        const mod = await import('../../data/whatif.mjs');
+        const asOf = args.as_of ? String(args.as_of) : await resolveToday(ctx);
+        try {
+          return mod.buildWhatIf(ctx.db, args.sku_code, {
+            as_of: asOf,
+            plan_id: args.plan_id,
+            overrides: args.overrides ?? {},
+            expected_arrival: args.expected_arrival,
+          });
+        } catch (err) {
+          if (err?.code) throw err;
+          toolError('INTERNAL', `What-if 重算失败：${err?.message ?? err}`);
+        }
+      },
+      meta(data) {
+        const delta = data.delta?.qty ?? 0;
+        return {
+          provenance: data.provenance ?? 'documented',
+          assumptions: data.assumptions ?? [],
+          as_of: data.as_of ?? null,
+          summary: `${data.sku?.sku_code ?? ''} What-if：${data.before?.suggest_num} → ${data.after?.suggest_num} 件（${delta >= 0 ? '+' : ''}${delta}）`,
         };
       },
     },

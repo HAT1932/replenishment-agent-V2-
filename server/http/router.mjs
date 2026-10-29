@@ -296,6 +296,20 @@ export function createRouter(options = {}) {
   };
   const provider = () => options.provider ?? deps.provider ?? null;
 
+  // ---- AI 解释 / What-if 重算（惰性加载，注入优先便于测试） ----
+  let explainModule = null;
+  async function explainApi() {
+    if (deps.explain && typeof deps.explain.buildExplainPayload === 'function') return deps.explain;
+    explainModule ??= await import('../agent/explain.mjs');
+    return explainModule;
+  }
+  let whatifModule = null;
+  async function whatifApi() {
+    if (deps.whatif && typeof deps.whatif.buildWhatIf === 'function') return deps.whatif;
+    whatifModule ??= await import('../data/whatif.mjs');
+    return whatifModule;
+  }
+
   // ---- 工作台读模型（增强层；注入优先，便于测试 stub） ----
   let workbenchModule = null;
   async function workbenchApi() {
@@ -554,6 +568,112 @@ export function createRouter(options = {}) {
         page_size: pageInfo.page_size,
       };
       return await queries().buildSuggestions(db, options);
+    },
+
+    /* --------------------- AI 解释（PRD US-01/US-02） ---------------------- */
+    async explain({ body }) {
+      const skuCode = V.assertString(body.sku_code, 'sku_code', { required: true, max: 64 });
+      const asOf = body.as_of ? V.assertDate(body.as_of, 'as_of') : undefined;
+      const planId = body.plan_id ? V.assertId(body.plan_id, 'plan_id') : undefined;
+
+      const detail = await queries().getSkuDetail(db, skuCode, {
+        ...(asOf ? { as_of: asOf } : {}),
+      });
+
+      // 决策视图（增强层，失败不影响解释）
+      let decision = null;
+      try {
+        const wb = await workbenchApi();
+        if (typeof wb.buildSkuDecision === 'function') {
+          decision = wb.buildSkuDecision(db, skuCode, {
+            ...(asOf ? { asOf } : {}),
+            ...(planId ? { plan_id: planId } : {}),
+          });
+        }
+      } catch {
+        decision = null;
+      }
+
+      const mod = await explainApi();
+      const payload = mod.buildExplainPayload({ detail, decision });
+      const result = await mod.generateExplanation({ provider: provider(), payload });
+      const generatedAt = new Date().toISOString();
+
+      await audit({
+        session_id: body.session_id ?? null,
+        actor: 'agent',
+        kind: 'explain_generated',
+        tool: 'explain',
+        ok: result.verification?.ok !== false,
+        payload: {
+          sku_code: skuCode,
+          source: result.source,
+          model: result.model,
+          numbers_checked: result.verification?.checked ?? 0,
+          numbers_unknown: (result.verification?.unknown ?? []).slice(0, 5),
+        },
+      });
+
+      return {
+        explanation: {
+          text: result.text,
+          source: result.source,
+          model: result.model,
+          degraded: result.degraded === true,
+          degraded_reason: result.error ?? null,
+          usage: result.usage ?? null,
+          verification: result.verification,
+          generated_at: generatedAt,
+        },
+        grounding: {
+          sku_code: payload.sku_code,
+          product_name: payload.product_name,
+          plan: payload.plan,
+          formula_text: payload.plan?.formula_text,
+          formula_expr: payload.formula_expr,
+          suggest_num: payload.suggest_num,
+          suggest_raw: payload.suggest_raw,
+          factor_identity: payload.factor_identity,
+          factors: payload.factors,
+          confidence: payload.confidence,
+          urgency: payload.urgency,
+          anomaly: payload.anomaly,
+          risk: payload.risk,
+          assumptions: payload.assumptions,
+          provenance_boundary: payload.provenance_boundary,
+        },
+      };
+    },
+
+    /* ----------------------------- What-if -------------------------------- */
+    async whatif({ body }) {
+      const skuCode = V.assertString(body.sku_code, 'sku_code', { required: true, max: 64 });
+      const overrides = V.assertObject(body.overrides ?? {}, 'overrides', { required: true });
+      const asOf = body.as_of ? V.assertDate(body.as_of, 'as_of') : undefined;
+      const planId = body.plan_id ? V.assertId(body.plan_id, 'plan_id') : undefined;
+      const scope = body.scope ? V.assertEnum(body.scope, 'scope', SCOPES, { default: 'store' }) : undefined;
+
+      const api = await whatifApi();
+      const result = await api.buildWhatIf(db, skuCode, {
+        ...(asOf ? { as_of: asOf } : {}),
+        ...(planId ? { plan_id: planId } : {}),
+        ...(scope ? { scope } : {}),
+        overrides,
+      });
+
+      await audit({
+        session_id: body.session_id ?? null,
+        actor: body.actor === 'agent' ? 'agent' : 'human',
+        kind: 'whatif_computed',
+        tool: 'whatif',
+        ok: true,
+        payload: {
+          sku_code: skuCode,
+          overrides: result.overrides?.applied ?? {},
+          delta_qty: result.delta?.qty ?? 0,
+        },
+      });
+      return result;
     },
 
     /* ------------------------- 决策工作台（增强层） ------------------------ */
@@ -1003,6 +1123,8 @@ export function createRouter(options = {}) {
 
     { method: 'GET', path: /^\/api\/suggestions$/, handler: handlers.suggestions },
     { method: 'GET', path: /^\/api\/workbench$/, handler: handlers.workbench },
+    { method: 'POST', path: /^\/api\/explain$/, handler: handlers.explain },
+    { method: 'POST', path: /^\/api\/whatif$/, handler: handlers.whatif },
     { method: 'GET', path: /^\/api\/sku\/(?<code>[^/]+)$/, handler: handlers.skuDetail },
 
     { method: 'GET', path: /^\/api\/inventory$/, handler: handlers.inventory },

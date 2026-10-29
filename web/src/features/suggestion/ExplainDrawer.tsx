@@ -11,6 +11,7 @@
  */
 import { useMemo } from 'react';
 import { Drawer } from '../../components/Drawer';
+import { AiExplainPanel } from './AiExplainPanel';
 import { CitationStrip } from '../../components/Citation';
 import { ProvenanceTag } from '../../components/ProvenanceTag';
 import { Sparkline } from '../../components/Sparkline';
@@ -304,6 +305,9 @@ export function ExplainDrawer({ open, suggestion, onClose }: ExplainDrawerProps)
           asOf={suggestion.as_of}
           expectedArrival={suggestion.expected_arrival}
         />
+
+        {/* AI 解读：模型用人话解释"为什么这么补"，数字逐句对账 */}
+        <AiExplainPanel suggestion={suggestion} />
 
         {/* 结果区：建议 / 采购 / 金额（全部来自服务端字段） */}
         <dl className="ra-dl">
