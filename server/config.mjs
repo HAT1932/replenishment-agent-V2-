@@ -23,11 +23,15 @@ export function parseEnv(text) {
     if (eq <= 0) continue;
     const key = line.slice(0, eq).trim();
     let value = line.slice(eq + 1).trim();
-    if (
+    const quoted =
       (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
+      (value.startsWith("'") && value.endsWith("'"));
+    if (quoted) {
       value = value.slice(1, -1);
+    } else {
+      // 支持行内注释：KEY=value   # 说明 —— 否则 .env.example 的示例注释会被当成值，
+      // 导致 LLM_PROVIDER 变成 "deepseek  # deepseek | mock" 而静默降级成 mock（踩过）。
+      value = value.replace(/\s+#.*$/, '').trim();
     }
     out[key] = value;
   }
