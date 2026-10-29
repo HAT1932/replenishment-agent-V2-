@@ -31,13 +31,14 @@ export function createDeps(opts = {}) {
     }
     if (!pending) {
       pending = (async () => {
-        const [domain, repository, queries] = await Promise.all([
+        const [domain, repository, queries, workbench] = await Promise.all([
           loadModule('../../domain/index.mjs'),
           loadModule('../../data/repository.mjs'),
           // 读模型是可选加速层：不存在时回退到 repository + domain 手工组装
           loadModule('../../data/queries.mjs').catch(() => null),
+          loadModule('../../data/workbench.mjs').catch(() => null),
         ]);
-        return { domain, repository, queries };
+        return { domain, repository, queries, workbench };
       })().catch((err) => {
         pending = null;
         throw err;

@@ -91,7 +91,7 @@ copy data\agent.db data\agent.db.bak
 | `server/domain/*.mjs` | 确定性内核（唯一算法出口，全量单测） |
 | `server/data/queries.mjs` | 读模型：批量建议 + KPI + SKU 详情 |
 | `server/agent/runtime.mjs` | Agent 循环/预算/审批闸门/事件流 |
-| `server/agent/tools/*.mjs` | 14 个工具（只读 12 + 产草稿 2） |
+| `server/agent/tools/*.mjs` | 15 个工具（只读 13 + 产草稿 2）；含 `workbench.get` 决策视图 |
 | `server/http/router.mjs` | REST 路由 + SSE 入口 |
 | `web/src/features/agent/*` | 会话 + 工具时间线 + 产物面板 |
 | `docs/00-migration.md` | v1→v2 取/改/弃台账与回归用例 |

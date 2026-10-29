@@ -26,6 +26,7 @@ import { createOrderTools } from './order.mjs';
 import { createAuditTools } from './audit.mjs';
 import { createScheduleTools } from './schedule.mjs';
 import { createAssumptionTools } from './assumption.mjs';
+import { createWorkbenchTools } from './workbench.mjs';
 
 export const DEFAULT_TOOL_TIMEOUT_MS = 20000;
 /** 允许出现在 error.code 里的错误码（域错误 + 运行时预算错误） */
@@ -83,6 +84,7 @@ export function createToolRegistry(opts = {}) {
     ...createOrderTools(),
     ...createAuditTools(),
     ...createScheduleTools(),
+    ...createWorkbenchTools(),
     ...createAssumptionTools(),
   ];
   const all = [...builtin, ...(opts.extraTools ?? [])];

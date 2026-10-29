@@ -224,6 +224,7 @@ createSession(db, {title}) / getSession / listSessions / appendMessage / listMes
 | 3 | `demand.window` | `{sku_code, days?, as_of?, include?}` | `demandWindow()` 结果 | 否 |
 | 4 | `safety.resolve` | `{sku_code, store_id?}` | `resolveSafetyStock()` 结果 + `avg_daily_sales_exact` | 否 |
 | 5 | `suggestion.compute` | `{plan_id?, plan?, store_id?, sku_codes?, category?, keyword?, as_of?, expected_arrival?, only_low?}` | `{as_of, expected_arrival, formula_text, plan:{...}, rows:[Suggestion], kpi, guard_note}` | 否 |
+| 5.5 | `workbench.get` | `{risk?, plan_id?, keyword?, store_id?, as_of?, sort?, order?, limit?}` | `{as_of, plan, risk_levels, risk_strategy, kpi, total, top:[{sku_code, risk_level, cover_days, stockout_date, inventory_capital, ...}], citation}` | 否（但风险指标为 enhancement 口径，meta 带 H10） |
 | 6 | `suggestion.explain` | `{sku_code, plan_id?, plan?}` | `{terms, coefficient_detail, guard, suggest_raw_exact, why:[{step,expr,value,note}]}` | 否 |
 | 7 | `plan.list` | `{}` | `{plans:[{plan_id,plan_name,plan_type,formula_text,provenance,config}]}` | 否 |
 | 8 | `order.create_draft` | `{kind:'purchase'\|'apply', items:[{sku_code,apply_num}], expected_arrival?, remark?}` | `{draft_id, kind, items, total_qty, total_amount, status:'draft'}` | **草稿** |
